@@ -84,6 +84,42 @@ function App() {
     }
   }
 
+    // Verify 6-digit MFA verification code (callable by form or instant autofill)
+  async function verifyMfaCode(rawCode) {
+    const code = (rawCode || mfaCode || '').trim()
+    if (!code || code.length !== 6) {
+      setError('Please enter the 6-digit verification code sent to your email.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/verify-mfa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken: mfaTempToken, mfaCode: code }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Invalid or expired verification code.')
+      }
+
+      if (!data.token || !data.user) {
+        throw new Error('Authentication response was incomplete.')
+      }
+
+      sessionStorage.setItem('trustvault_token', data.token)
+      sessionStorage.setItem('trustvault_user', JSON.stringify(data.user))
+      setLoggedInUser(data.user)
+    } catch (err) {
+      setError(err.message || 'Verification failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Handle Form Submission
   async function handleSubmit(event) {
     event.preventDefault()
@@ -162,36 +198,7 @@ function App() {
 
     // 3. MULTI-FACTOR AUTHENTICATION (Verify 6-digit OTP code)
     if (mode === 'mfa') {
-      if (!mfaCode.trim() || mfaCode.trim().length !== 6) {
-        setError('Please enter the 6-digit verification code sent to your email.')
-        return
-      }
-
-      setLoading(true)
-      try {
-        const res = await fetch(`${API_BASE}/api/auth/verify-mfa`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tempToken: mfaTempToken, mfaCode: mfaCode.trim() }),
-        })
-        const data = await res.json()
-
-        if (!res.ok) {
-          throw new Error(data.message || 'Invalid or expired verification code.')
-        }
-
-        if (!data.token || !data.user) {
-          throw new Error('Authentication response was incomplete.')
-        }
-
-        sessionStorage.setItem('trustvault_token', data.token)
-        sessionStorage.setItem('trustvault_user', JSON.stringify(data.user))
-        setLoggedInUser(data.user)
-      } catch (err) {
-        setError(err.message || 'Verification failed. Please try again.')
-      } finally {
-        setLoading(false)
-      }
+      await verifyMfaCode()
       return
     }
 
@@ -539,37 +546,38 @@ function App() {
                 </div>
 
                 {mfaEvalCode && (
-                  <div className="eval-helper-box" style={{
-                    background: '#f0fdf4',
-                    border: '1px solid #86efac',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    margin: '12px 0',
-                    fontSize: '13px',
-                    color: '#166534'
-                  }}>
-                    <div style={{ fontWeight: 700, marginBottom: '4px' }}>
-                      🧪 Evaluation Sandbox Notice:
+                  <div className="eval-helper-box">
+                    <div className="eval-helper-title">
+                      🧪 Evaluation Sandbox Notice
                     </div>
-                    <div style={{ marginBottom: '8px' }}>
-                      External mail service restricted delivery to unverified domain. For evaluator testing, your 6-digit verification code is: <strong>{mfaEvalCode}</strong>
+                    <p className="eval-helper-text">
+                      External email provider restricted unverified recipient. Verification code: <strong>{mfaEvalCode}</strong>
+                    </p>
+                    <div className="eval-btn-group">
+                      <button
+                        type="button"
+                        className="autofill-login-primary-btn"
+                        onClick={() => {
+                          setMfaCode(mfaEvalCode)
+                          verifyMfaCode(mfaEvalCode)
+                        }}
+                      >
+                        ⚡ Autofill &amp; Sign In Instantly
+                      </button>
+                      <button
+                        type="button"
+                        className="autofill-fill-only-btn"
+                        onClick={() => {
+                          setMfaCode(mfaEvalCode)
+                          setTimeout(() => {
+                            const btn = document.getElementById('auth-submit-btn') || document.querySelector('.submit-button')
+                            if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                          }, 50)
+                        }}
+                      >
+                        Insert Code ({mfaEvalCode})
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setMfaCode(mfaEvalCode)}
-                      style={{
-                        background: '#15803d',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '5px 12px',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        fontWeight: 600
-                      }}
-                    >
-                      Autofill Code ({mfaEvalCode})
-                    </button>
                   </div>
                 )}
 
@@ -634,6 +642,7 @@ function App() {
 
             {/* Submit Button */}
             <button
+              id="auth-submit-btn"
               className="submit-button"
               type="submit"
               disabled={loading}
