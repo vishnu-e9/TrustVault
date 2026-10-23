@@ -47,6 +47,20 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Serve frontend build if present (for seamless single-service production deployment)
+const path = require("path");
+const fs = require("fs");
+const frontendDist = path.resolve(__dirname, "..", "frontend", "dist");
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.use((req, res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api")) {
+      return res.sendFile(path.join(frontendDist, "index.html"));
+    }
+    next();
+  });
+}
+
 // Connect to MongoDB and start the server
 async function startServer() {
   try {

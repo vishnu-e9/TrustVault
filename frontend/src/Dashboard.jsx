@@ -1,3 +1,16 @@
+
+function FolderGridIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7"></rect>
+      <rect x="14" y="3" width="7" height="7"></rect>
+      <rect x="14" y="14" width="7" height="7"></rect>
+      <rect x="3" y="14" width="7" height="7"></rect>
+    </svg>
+  )
+}
+
+const API_BASE = import.meta.env.VITE_API_URL || ''
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import './Dashboard.css'
 
@@ -38,6 +51,46 @@ function getFileType(fileName) {
   return 'FILE'
 }
 
+
+const DOCUMENT_CATEGORIES = [
+  {
+    name: 'Finance',
+    icon: '💰',
+    color: '#10b981',
+    description: 'Invoices, salary slips and financial records.'
+  },
+  {
+    name: 'HR',
+    icon: '👥',
+    color: '#6366f1',
+    description: 'Resumes, offer letters and employee records.'
+  },
+  {
+    name: 'Legal',
+    icon: '⚖️',
+    color: '#f59e0b',
+    description: 'Contracts, agreements and legal documents.'
+  },
+  {
+    name: 'IT',
+    icon: '💻',
+    color: '#06b6d4',
+    description: 'Technical specs, architecture diagrams and logs.'
+  },
+  {
+    name: 'Education',
+    icon: '🎓',
+    color: '#8b5cf6',
+    description: 'Certificates, course materials and research.'
+  },
+  {
+    name: 'Personal',
+    icon: '👤',
+    color: '#ec4899',
+    description: 'ID proofs, medical records and personal files.'
+  }
+]
+
 export default function Dashboard({ user, onLogout }) {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState('Dashboard')
@@ -59,6 +112,8 @@ export default function Dashboard({ user, onLogout }) {
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [uploadCategory, setUploadCategory] = useState('General')
 
   // Modals state
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -118,7 +173,7 @@ export default function Dashboard({ user, onLogout }) {
     setDocsError('')
 
     try {
-      const res = await fetch('/api/documents', {
+      const res = await fetch(`${API_BASE}/api/documents`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await res.json()
@@ -138,7 +193,7 @@ export default function Dashboard({ user, onLogout }) {
     setLoadingShared(true)
 
     try {
-      const res = await fetch('/api/documents/shared-with-me', {
+      const res = await fetch(`${API_BASE}/api/documents/shared-with-me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await res.json()
@@ -160,7 +215,7 @@ export default function Dashboard({ user, onLogout }) {
     setAuditError('')
 
     try {
-      const res = await fetch('/api/documents/audit-logs', {
+      const res = await fetch(`${API_BASE}/api/documents/audit-logs`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await res.json()
@@ -203,14 +258,18 @@ export default function Dashboard({ user, onLogout }) {
 
   // Real filtered documents
   const filteredDocuments = useMemo(() => {
-    if (!searchQuery.trim()) return documents
+    let list = documents
+    if (selectedCategory && selectedCategory !== 'All') {
+      list = list.filter((d) => (d.category || 'General').toLowerCase() === selectedCategory.toLowerCase())
+    }
+    if (!searchQuery.trim()) return list
     const q = searchQuery.toLowerCase()
-    return documents.filter(
+    return list.filter(
       (d) =>
         (d.title && d.title.toLowerCase().includes(q)) ||
         (d.originalName && d.originalName.toLowerCase().includes(q)),
     )
-  }, [documents, searchQuery])
+  }, [documents, searchQuery, selectedCategory])
 
   // Handle Search Submission (switches to view with documents if elsewhere)
   const handleSearchSubmit = (e) => {
@@ -244,9 +303,10 @@ export default function Dashboard({ user, onLogout }) {
       const formData = new FormData()
       formData.append('title', title)
       formData.append('description', uploadDescription.trim())
+      formData.append('category', uploadCategory)
       formData.append('document', uploadFile)
 
-      const res = await fetch('/api/documents/upload', {
+      const res = await fetch(`${API_BASE}/api/documents/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -288,7 +348,7 @@ export default function Dashboard({ user, onLogout }) {
     }
 
     try {
-      const res = await fetch(`/api/documents/${encodeURIComponent(docId)}/download`, {
+      const res = await fetch(`${API_BASE}/api/documents/${encodeURIComponent(docId)}/download`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
@@ -341,7 +401,7 @@ export default function Dashboard({ user, onLogout }) {
     setShareLoading(true)
 
     try {
-      const res = await fetch(`/api/documents/${encodeURIComponent(shareDocId)}/share`, {
+      const res = await fetch(`${API_BASE}/api/documents/${encodeURIComponent(shareDocId)}/share`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -376,7 +436,7 @@ export default function Dashboard({ user, onLogout }) {
     setRevokingEmail(email)
 
     try {
-      const res = await fetch(`/api/documents/${encodeURIComponent(docId)}/revoke`, {
+      const res = await fetch(`${API_BASE}/api/documents/${encodeURIComponent(docId)}/revoke`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -421,7 +481,7 @@ export default function Dashboard({ user, onLogout }) {
     if (!token) return
 
     try {
-      const res = await fetch(`/api/documents/${encodeURIComponent(docId)}`, {
+      const res = await fetch(`${API_BASE}/api/documents/${encodeURIComponent(docId)}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -496,6 +556,17 @@ export default function Dashboard({ user, onLogout }) {
               <FileTextIcon />
             </span>
             <span>My Documents</span>
+          </button>
+
+          <button
+            type="button"
+            className={`nav-link ${activeTab === 'Categories' ? 'active' : ''}`}
+            onClick={() => setActiveTab('Categories')}
+          >
+            <span className="nav-icon">
+              <FolderGridIcon />
+            </span>
+            <span>Categories</span>
           </button>
 
           <button
@@ -1318,6 +1389,65 @@ export default function Dashboard({ user, onLogout }) {
           </div>
         )}
 
+        
+        {/* ================= TAB: CATEGORIES ================= */}
+        {activeTab === 'Categories' && (
+          <div className="tab-standalone-view">
+            <div className="standalone-view-header">
+              <div>
+                <h2>Document Categories</h2>
+                <p>Choose a category to explore your documents.</p>
+              </div>
+              <button
+                type="button"
+                className="upload-doc-primary-btn"
+                onClick={() => setShowUploadModal(true)}
+              >
+                <PlusIcon />
+                <span>Upload Document</span>
+              </button>
+            </div>
+
+            <div className="categories-grid-container">
+              {DOCUMENT_CATEGORIES.map((cat) => {
+                const count = documents.filter(
+                  (d) => (d.category || 'General').toLowerCase() === cat.name.toLowerCase()
+                ).length
+
+                return (
+                  <div
+                    key={cat.name}
+                    className="category-card"
+                    onClick={() => {
+                      setSelectedCategory(cat.name)
+                      setActiveTab('My Documents')
+                    }}
+                  >
+                    <div className="category-top-accent" style={{ background: cat.color }} />
+                    <div className="category-header-wrap">
+                      <div className="category-icon-box" style={{ background: `${cat.color}18` }}>
+                        <span className="category-icon-text">{cat.icon}</span>
+                      </div>
+                    </div>
+                    <div className="category-card-body">
+                      <h3 className="category-title">{cat.name}</h3>
+                      <span className="category-count-badge">
+                        {count} document{count !== 1 ? 's' : ''}
+                      </span>
+                      <p className="category-description">{cat.description}</p>
+                    </div>
+                    <div className="category-card-footer">
+                      <span className="view-docs-btn">
+                        View Documents &rarr;
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ================= TAB: MY DOCUMENTS (FULL VIEW) ================= */}
         {activeTab === 'My Documents' && (
           <div className="tab-standalone-view">
@@ -1697,7 +1827,7 @@ export default function Dashboard({ user, onLogout }) {
                     }
 
                     try {
-                      const res = await fetch('/api/auth/reset-password', {
+                      const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email: userEmail, password: newPassword }),
@@ -1795,6 +1925,24 @@ export default function Dashboard({ user, onLogout }) {
                   onChange={(e) => setUploadDescription(e.target.value)}
                   maxLength={500}
                 />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="modal-doc-category">Document Category</label>
+                <select
+                  id="modal-doc-category"
+                  value={uploadCategory}
+                  onChange={(e) => setUploadCategory(e.target.value)}
+                  className="modal-select-field"
+                >
+                  <option value="General">General / Other</option>
+                  <option value="Finance">💰 Finance (Invoices, receipts)</option>
+                  <option value="HR">👥 HR (Resumes, employee records)</option>
+                  <option value="Legal">⚖️ Legal (Contracts, NDA)</option>
+                  <option value="IT">💻 IT (Specs, credentials, architecture)</option>
+                  <option value="Education">🎓 Education (Certificates, studies)</option>
+                  <option value="Personal">👤 Personal (ID proofs, medical)</option>
+                </select>
               </div>
 
               {/* File Dropzone */}

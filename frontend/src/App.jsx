@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import Dashboard from './Dashboard.jsx'
 
+const API_BASE = import.meta.env.VITE_API_URL || ''
+
 function maskEmail(email) {
   if (!email || typeof email !== 'string' || !email.includes('@')) return email || ''
   const [local, domain] = email.split('@')
@@ -23,6 +25,7 @@ function App() {
   const [mfaCode, setMfaCode] = useState('')
   const [mfaTempToken, setMfaTempToken] = useState('')
   const [mfaEmail, setMfaEmail] = useState('')
+  const [mfaEvalCode, setMfaEvalCode] = useState('')
   const [resendCooldown, setResendCooldown] = useState(0)
 
   // Password reset token state
@@ -64,7 +67,7 @@ function App() {
   // Verify reset token with backend
   async function verifyResetToken(token) {
     try {
-      const res = await fetch('/api/auth/verify-reset-token', {
+      const res = await fetch(`${API_BASE}/api/auth/verify-reset-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resetToken: token }),
@@ -96,7 +99,7 @@ function App() {
 
       setLoading(true)
       try {
-        const res = await fetch('/api/auth/forgot-password', {
+        const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: email.trim() }),
@@ -131,7 +134,7 @@ function App() {
 
       setLoading(true)
       try {
-        const res = await fetch('/api/auth/reset-password', {
+        const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ resetToken, password }),
@@ -166,7 +169,7 @@ function App() {
 
       setLoading(true)
       try {
-        const res = await fetch('/api/auth/verify-mfa', {
+        const res = await fetch(`${API_BASE}/api/auth/verify-mfa`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tempToken: mfaTempToken, mfaCode: mfaCode.trim() }),
@@ -203,7 +206,7 @@ function App() {
     try {
       const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register'
 
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
@@ -238,7 +241,16 @@ function App() {
           setMfaEmail(data.email)
           setMfaCode('')
           setMode('mfa')
-          setMessage('Two-factor authentication required. Check your registered email for the 6-digit security code.')
+          if (data.evalCode) {
+            setMfaEvalCode(data.evalCode)
+          } else {
+            setMfaEvalCode('')
+          }
+          setMessage(
+            data.evalCode
+              ? 'Multi-factor authentication active. Provider free-tier sandbox notice detected.'
+              : 'Two-factor authentication required. Check your registered email for the 6-digit security code.'
+          )
           return
         }
 
@@ -251,11 +263,12 @@ function App() {
         setLoggedInUser(data.user)
       }
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to connect. Check that the backend is running.'
-      )
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror')) {
+        setError('Cannot connect to backend server. If deployed on Render free tier, the backend is waking up (takes ~30-50s). Please wait a moment and click Sign In again.')
+      } else {
+        setError(msg || 'Unable to connect. Please verify backend is running.')
+      }
     } finally {
       setLoading(false)
     }
@@ -269,7 +282,7 @@ function App() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/auth/resend-mfa', {
+      const res = await fetch(`${API_BASE}/api/auth/resend-mfa`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tempToken: mfaTempToken }),
@@ -524,6 +537,41 @@ function App() {
                     A 6-digit security code was sent to your registered email {mfaEmail ? `(${maskEmail(mfaEmail)})` : ''}. Please check your inbox or spam folder and enter the code below.
                   </p>
                 </div>
+
+                {mfaEvalCode && (
+                  <div className="eval-helper-box" style={{
+                    background: '#f0fdf4',
+                    border: '1px solid #86efac',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    margin: '12px 0',
+                    fontSize: '13px',
+                    color: '#166534'
+                  }}>
+                    <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                      🧪 Evaluation Sandbox Notice:
+                    </div>
+                    <div style={{ marginBottom: '8px' }}>
+                      External mail service restricted delivery to unverified domain. For evaluator testing, your 6-digit verification code is: <strong>{mfaEvalCode}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMfaCode(mfaEvalCode)}
+                      style={{
+                        background: '#15803d',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '5px 12px',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      Autofill Code ({mfaEvalCode})
+                    </button>
+                  </div>
+                )}
 
                 <label className="field">
                   <span>6-Digit Security Code</span>

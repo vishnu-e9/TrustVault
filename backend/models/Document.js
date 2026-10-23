@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const documentSchema = new mongoose.Schema(
@@ -14,6 +13,12 @@ const documentSchema = new mongoose.Schema(
       trim: true,
       maxlength: 1000,
       default: ""
+    },
+    category: {
+      type: String,
+      trim: true,
+      enum: ["Finance", "HR", "Legal", "IT", "Education", "Personal", "General"],
+      default: "General"
     },
     originalName: {
       type: String,

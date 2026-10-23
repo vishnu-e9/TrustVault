@@ -223,9 +223,14 @@ router.post(
         });
       }
 
+      const validCategories = ["Finance", "HR", "Legal", "IT", "Education", "Personal", "General"];
+      const rawCategory = typeof req.body.category === "string" ? req.body.category.trim() : "";
+      const category = validCategories.includes(rawCategory) ? rawCategory : "General";
+
       const document = await Document.create({
         title,
         description,
+        category,
         originalName: path.basename(req.file.originalname),
         storedName: req.file.filename,
         mimeType: req.file.mimetype,
@@ -285,7 +290,7 @@ router.get("/", authenticate, async (req, res) => {
       owner: req.user._id
     })
       .select(
-        "title description originalName mimeType size owner createdAt updatedAt"
+        "title description originalName mimeType size category owner allowedViewers createdAt updatedAt"
       )
       .sort({ createdAt: -1 })
       .lean();

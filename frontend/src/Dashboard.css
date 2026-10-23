@@ -2137,3 +2137,129 @@ html, body, #root {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ==========================================
+   DOCUMENT CATEGORIES GRID & CARDS
+========================================== */
+
+.categories-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 20px;
+  padding: 8px 0 24px 0;
+}
+
+.category-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--tv-radius-lg);
+  padding: 24px 20px 20px;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.category-card:hover {
+  transform: translateY(-3px);
+  border-color: #2dd4bf;
+  box-shadow: 0 10px 24px rgba(13, 148, 136, 0.12);
+}
+
+.category-top-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.category-header-wrap {
+  margin-bottom: 14px;
+}
+
+.category-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-icon-text {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.category-card-body {
+  flex: 1;
+}
+
+.category-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tv-text-dark);
+  margin: 0 0 6px 0;
+}
+
+.category-count-badge {
+  display: inline-block;
+  background: #f0fdfa;
+  color: #0f766e;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 12px;
+  border: 1px solid #ccfbf1;
+  margin-bottom: 12px;
+}
+
+.category-description {
+  font-size: 13px;
+  color: var(--tv-text-muted);
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+
+.category-card-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.view-docs-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tv-teal-button);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.category-card:hover .view-docs-btn {
+  color: var(--tv-teal-hover);
+  transform: translateX(4px);
+}
+
+.modal-select-field {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--tv-radius-md);
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 14px;
+  color: var(--tv-text-dark);
+  outline: none;
+  transition: border 0.2s;
+}
+
+.modal-select-field:focus {
+  border-color: var(--tv-teal-button);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
