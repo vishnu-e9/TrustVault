@@ -1,8 +1,8 @@
-
 require("dotenv").config();
 
 const authenticate = require("./middleware/authenticate");
 const express = require("express");
+const cors = require("cors");
 const helmet = require("helmet");
 const mongoose = require("mongoose");
 
@@ -12,8 +12,9 @@ const documentRoutes = require("./routes/documents");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security middleware
+// Security & Cross-Origin Middleware
 app.use(helmet());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "100kb" }));
 
 // API routes
