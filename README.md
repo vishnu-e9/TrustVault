@@ -1,4 +1,4 @@
-👨‍💻 **Author:** Vishnu Vardhan ([@vishnu-e9](https://github.com/vishnu-e9))
+👩‍💻 **Author:** Swarna Venkata Vishnu Priya ([@vishnu-e9](https://github.com/vishnu-e9))
 
 # TrustVault 🔐
 ### Secure Document Management with Multi-Factor Authentication and Access Control
@@ -125,7 +125,7 @@ All 21 tests execute in under 500ms covering BOLA/IDOR, RBAC audit restrictions,
 
 ## 🌐 Links & Repository
 * **GitHub Repository:** [https://github.com/vishnu-e9/TrustVault](https://github.com/vishnu-e9/TrustVault)
-* **Author GitHub:** [@vishnu-e9](https://github.com/vishnu-e9)
+* **Author GitHub:** [vishnu-e9](https://github.com/vishnu-e9)
 * **Security Threat Matrix:** [THREATS.md](THREATS.md)
 * **AI Prompts & Interventions Log:** [PROMPTS.md](PROMPTS.md)
 
