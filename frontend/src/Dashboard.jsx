@@ -212,6 +212,14 @@ export default function Dashboard({ user, onLogout }) {
     )
   }, [documents, searchQuery])
 
+  // Handle Search Submission (switches to view with documents if elsewhere)
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault()
+    if (activeTab !== 'Dashboard' && activeTab !== 'My Documents') {
+      setActiveTab('Dashboard')
+    }
+  }
+
   // Handle Document Upload
   const handleUploadSubmit = async (e) => {
     e.preventDefault()
@@ -587,24 +595,37 @@ export default function Dashboard({ user, onLogout }) {
           {/* Right Search & Profile */}
           <div className="header-actions">
             {/* Search documents */}
-            <div className="header-search-box">
-              <SearchIcon />
-              <input
-                type="text"
-                placeholder="Search documents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
+            <form className="header-search-form" onSubmit={handleSearchSubmit}>
+              <div className="header-search-box">
+                <SearchIcon />
+                <input
+                  type="text"
+                  placeholder="Search documents..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search documents"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="search-clear-btn"
+                    onClick={() => setSearchQuery('')}
+                    title="Clear search"
+                    aria-label="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
                 <button
-                  type="button"
-                  className="search-clear-btn"
-                  onClick={() => setSearchQuery('')}
+                  type="submit"
+                  className="search-action-btn"
+                  title="Search documents"
+                  aria-label="Search documents"
                 >
-                  ✕
+                  Search
                 </button>
-              )}
-            </div>
+              </div>
+            </form>
 
             {/* Profile Avatar Pill */}
             <div className="profile-dropdown-wrapper" ref={profileRef}>
@@ -907,6 +928,22 @@ export default function Dashboard({ user, onLogout }) {
                     <span>Upload Document</span>
                   </button>
                 </div>
+
+                {/* Active Search Banner */}
+                {searchQuery && (
+                  <div className="search-query-banner">
+                    <span>
+                      Found <strong>{filteredDocuments.length}</strong> {filteredDocuments.length === 1 ? 'document' : 'documents'} matching &ldquo;<strong>{searchQuery}</strong>&rdquo;
+                    </span>
+                    <button
+                      type="button"
+                      className="banner-clear-btn"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      Clear Search
+                    </button>
+                  </div>
+                )}
 
                 {/* Table Content */}
                 <div className="documents-table-wrap">
@@ -1289,17 +1326,59 @@ export default function Dashboard({ user, onLogout }) {
                 <h2>My Documents</h2>
                 <p>Manage all files stored in your encrypted vault.</p>
               </div>
-              <button
-                type="button"
-                className="upload-doc-primary-btn"
-                onClick={() => setShowUploadModal(true)}
-              >
-                <PlusIcon />
-                <span>Upload Document</span>
-              </button>
+              <div className="standalone-header-actions">
+                <form className="table-search-form" onSubmit={handleSearchSubmit}>
+                  <div className="table-search-box">
+                    <SearchIcon />
+                    <input
+                      type="text"
+                      placeholder="Search documents..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      aria-label="Search documents"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        className="search-clear-btn"
+                        onClick={() => setSearchQuery('')}
+                        title="Clear"
+                      >
+                        ✕
+                      </button>
+                    )}
+                    <button type="submit" className="search-action-btn">
+                      Search
+                    </button>
+                  </div>
+                </form>
+                <button
+                  type="button"
+                  className="upload-doc-primary-btn"
+                  onClick={() => setShowUploadModal(true)}
+                >
+                  <PlusIcon />
+                  <span>Upload Document</span>
+                </button>
+              </div>
             </div>
 
             <div className="documents-table-card">
+              {/* Active Search Banner */}
+              {searchQuery && (
+                <div className="search-query-banner">
+                  <span>
+                    Found <strong>{filteredDocuments.length}</strong> {filteredDocuments.length === 1 ? 'document' : 'documents'} matching &ldquo;<strong>{searchQuery}</strong>&rdquo;
+                  </span>
+                  <button
+                    type="button"
+                    className="banner-clear-btn"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    Clear Search
+                  </button>
+                </div>
+              )}
               <div className="documents-table-wrap">
                 <table className="documents-table">
                   <thead>
