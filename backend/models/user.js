@@ -34,10 +34,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
-    // Multi-factor authentication (MFA / 2FA) fields
+    // Multi-factor authentication (MFA / 2FA) fields (disabled by default)
     mfaEnabled: {
       type: Boolean,
-      default: true
+      default: false
     },
     mfaCode: {
       type: String,

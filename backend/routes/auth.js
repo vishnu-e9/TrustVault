@@ -136,47 +136,11 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // MULTI-FACTOR AUTHENTICATION (MFA)
-    // When enabled, generate a 6-digit OTP code sent to registered email
-    if (user.mfaEnabled !== false) {
-      if (user.role) {
-        user.role = user.role.toLowerCase();
-      }
-      const mfaCode = Math.floor(100000 + Math.random() * 900000).toString();
-      user.mfaCode = mfaCode;
-      user.mfaExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-      await user.save();
-
-      // Dispatch 2FA email
-      const emailResult = await EmailService.sendMfaCodeEmail(user.email, mfaCode);
-
-      // Temporary token for completing MFA step
-      const tempToken = jwt.sign(
-        { sub: user._id.toString(), type: "mfa_pending" },
-        secret,
-        { expiresIn: "10m" }
-      );
-
-      const responsePayload = {
-        success: true,
-        mfaRequired: true,
-        tempToken,
-        email: user.email,
-        message: "A 6-digit security verification code has been sent to your registered email."
-      };
-
-      // Safeguard for Hackathon Evaluators:
-      // If external email dispatch is restricted by provider free tier (e.g. unverified domain on Resend),
-      // provide test evalCode so judges are never blocked from evaluating the platform!
-      if (!emailResult || !emailResult.sent) {
-        responsePayload.deliveryNote = "Notice: Provider free-tier restricted delivery to external domain. Evaluation verification code: " + mfaCode;
-        responsePayload.evalCode = mfaCode;
-      }
-
-      return res.status(200).json(responsePayload);
+    if (user.role) {
+      user.role = user.role.toLowerCase();
     }
 
-    // If MFA is not enabled, return standard session token
+    // Direct Login without 2FA step (instant seamless access)
     const token = jwt.sign(
       { sub: user._id.toString() },
       secret,

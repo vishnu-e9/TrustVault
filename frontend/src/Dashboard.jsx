@@ -11,7 +11,7 @@ function FolderGridIcon() {
 }
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import './Dashboard.css'
 
 // Helper: Format file size
@@ -148,6 +148,62 @@ export default function Dashboard({ user, onLogout }) {
 
   const profileRef = useRef(null)
   const menuRef = useRef(null)
+
+  // Adjustable & Collapsible Sidebar State
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('tv_sidebar_width')
+    return saved ? parseInt(saved, 10) : 260
+  })
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('tv_sidebar_collapsed') === 'true'
+  })
+  const [isResizing, setIsResizing] = useState(false)
+  const sidebarRef = useRef(null)
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem('tv_sidebar_collapsed', String(next))
+      return next
+    })
+  }
+
+  const startResizing = useCallback((e) => {
+    e.preventDefault()
+    setIsResizing(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isResizing) return
+
+    const handleMouseMove = (e) => {
+      let newWidth = e.clientX
+      if (newWidth < 180) newWidth = 180
+      if (newWidth > 420) newWidth = 420
+      setSidebarWidth(newWidth)
+      localStorage.setItem('tv_sidebar_width', String(newWidth))
+      if (isSidebarCollapsed) {
+        setIsSidebarCollapsed(false)
+        localStorage.setItem('tv_sidebar_collapsed', 'false')
+      }
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'col-resize'
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+    }
+  }, [isResizing, isSidebarCollapsed])
 
   // Dynamic user data from props
   const displayName = user?.name || user?.email?.split('@')[0] || 'User'
@@ -525,13 +581,33 @@ export default function Dashboard({ user, onLogout }) {
       )}
 
       {/* ================= LEFT SIDEBAR ================= */}
-      <aside className="dashboard-sidebar">
-        {/* Brand Logo */}
-        <div className="sidebar-brand">
-          <div className="brand-logo-squircle">
-            <span>T</span>
+      <aside
+        ref={sidebarRef}
+        className={`dashboard-sidebar ${isSidebarCollapsed ? 'collapsed' : ''} ${isResizing ? 'is-resizing' : ''}`}
+        style={{
+          width: isSidebarCollapsed ? 74 : `${sidebarWidth}px`,
+          minWidth: isSidebarCollapsed ? 74 : undefined,
+          maxWidth: isSidebarCollapsed ? 74 : undefined,
+          transition: isResizing ? 'none' : 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
+        {/* Brand Logo & Collapse Toggle */}
+        <div className="sidebar-brand-row">
+          <div className="sidebar-brand" title="TrustVault">
+            <div className="brand-logo-squircle">
+              <span>T</span>
+            </div>
+            {!isSidebarCollapsed && <span className="brand-title">TrustVault</span>}
           </div>
-          <span className="brand-title">TrustVault</span>
+          <button
+            type="button"
+            className="sidebar-collapse-toggle-btn"
+            onClick={toggleSidebarCollapse}
+            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isSidebarCollapsed ? '»' : '«'}
+          </button>
         </div>
 
         {/* Navigation Items */}
@@ -540,66 +616,72 @@ export default function Dashboard({ user, onLogout }) {
             type="button"
             className={`nav-link ${activeTab === 'Dashboard' ? 'active' : ''}`}
             onClick={() => setActiveTab('Dashboard')}
+            title="Dashboard"
           >
             <span className="nav-icon">
               <HomeIcon />
             </span>
-            <span>Dashboard</span>
+            {!isSidebarCollapsed && <span>Dashboard</span>}
           </button>
 
           <button
             type="button"
             className={`nav-link ${activeTab === 'My Documents' ? 'active' : ''}`}
             onClick={() => setActiveTab('My Documents')}
+            title="My Documents"
           >
             <span className="nav-icon">
               <FileTextIcon />
             </span>
-            <span>My Documents</span>
+            {!isSidebarCollapsed && <span>My Documents</span>}
           </button>
 
           <button
             type="button"
             className={`nav-link ${activeTab === 'Categories' ? 'active' : ''}`}
             onClick={() => setActiveTab('Categories')}
+            title="Categories"
           >
             <span className="nav-icon">
               <FolderGridIcon />
             </span>
-            <span>Categories</span>
+            {!isSidebarCollapsed && <span>Categories</span>}
           </button>
 
           <button
             type="button"
             className={`nav-link ${activeTab === 'Shared With Me' ? 'active' : ''}`}
             onClick={() => setActiveTab('Shared With Me')}
+            title="Shared With Me"
           >
             <span className="nav-icon">
               <UsersIcon />
             </span>
-            <span>Shared With Me</span>
+            {!isSidebarCollapsed && <span>Shared With Me</span>}
           </button>
 
           <button
             type="button"
             className={`nav-link ${activeTab === 'Activity Log' ? 'active' : ''}`}
             onClick={() => setActiveTab('Activity Log')}
+            title="Activity Log"
           >
             <span className="nav-icon">
               <ClockIcon />
             </span>
-            <span>Activity Log</span>
+            {!isSidebarCollapsed && <span>Activity Log</span>}
           </button>
 
           <button
             type="button"
             className={`nav-link ${activeTab === 'Settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('Settings')}
+            title="Settings"
           >
             <span className="nav-icon">
               <SettingsIcon />
             </span>
-            <span>Settings</span>
+            {!isSidebarCollapsed && <span>Settings</span>}
           </button>
         </nav>
 
@@ -611,40 +693,59 @@ export default function Dashboard({ user, onLogout }) {
             onClick={() => setShowSecurityModal(true)}
             role="button"
             tabIndex={0}
+            title="Your vault, protected"
           >
             <div className="security-card-icon">
               <ShieldLockIcon />
             </div>
-            <div className="security-card-content">
-              <h4>Your vault, protected</h4>
-              <p>Secure • Private • Trusted</p>
-            </div>
+            {!isSidebarCollapsed && (
+              <div className="security-card-content">
+                <h4>Your vault, protected</h4>
+                <p>Secure • Private • Trusted</p>
+              </div>
+            )}
           </div>
 
           {/* Sign Out Button */}
-          <button type="button" className="sidebar-signout-btn" onClick={onLogout}>
+          <button
+            type="button"
+            className="sidebar-signout-btn"
+            onClick={onLogout}
+            title="Sign Out"
+          >
             <span className="signout-icon">
               <SignOutIcon />
             </span>
-            <span>Sign Out</span>
+            {!isSidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
 
-        {/* Background wavy curves decoration */}
-        <div className="sidebar-wave-art" aria-hidden="true">
-          <svg viewBox="0 0 260 160" fill="none">
-            <path
-              d="M-20 80 Q 60 140, 160 90 T 300 110"
-              stroke="rgba(45, 212, 191, 0.12)"
-              strokeWidth="2.5"
-            />
-            <path
-              d="M-10 120 Q 80 60, 180 120 T 320 80"
-              stroke="rgba(45, 212, 191, 0.08)"
-              strokeWidth="2"
-            />
-          </svg>
+        {/* Drag handle for resizing */}
+        <div
+          className="sidebar-resize-handle"
+          onMouseDown={startResizing}
+          title="Drag to adjust sidebar width"
+        >
+          <div className="sidebar-resize-indicator" />
         </div>
+
+        {/* Background wavy curves decoration */}
+        {!isSidebarCollapsed && (
+          <div className="sidebar-wave-art" aria-hidden="true">
+            <svg viewBox="0 0 260 160" fill="none">
+              <path
+                d="M-20 80 Q 60 140, 160 90 T 300 110"
+                stroke="rgba(45, 212, 191, 0.12)"
+                strokeWidth="2.5"
+              />
+              <path
+                d="M-10 120 Q 80 60, 180 120 T 320 80"
+                stroke="rgba(45, 212, 191, 0.08)"
+                strokeWidth="2"
+              />
+            </svg>
+          </div>
+        )}
       </aside>
 
       {/* ================= MAIN DASHBOARD BODY ================= */}
