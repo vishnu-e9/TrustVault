@@ -11,7 +11,7 @@ class EmailService {
    */
   static isRealConfigured() {
     const emailUser = (process.env.SMTP_USER || process.env.EMAIL_USER || "").trim();
-    const emailPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || "").trim();
+    const emailPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.RESEND_API_KEY || "").trim();
     const smtpHost = (process.env.SMTP_HOST || "").trim();
     const emailService = (process.env.EMAIL_SERVICE || "").trim().toLowerCase();
 
@@ -219,7 +219,7 @@ class EmailService {
    */
   static async sendPasswordResetEmail(toEmail, resetToken, hostUrl = "http://localhost:5173") {
     const emailUser = (process.env.SMTP_USER || process.env.EMAIL_USER || "").trim();
-    const emailPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || "").trim();
+    const emailPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.RESEND_API_KEY || "").trim();
     const isReal = this.isRealConfigured();
     const resetUrl = `${hostUrl}/?resetToken=${resetToken}`;
     const fromAddress = process.env.EMAIL_FROM || (emailUser ? `"TrustVault Security" <${emailUser}>` : '"TrustVault Security" <security@trustvault.com>');
@@ -316,7 +316,7 @@ class EmailService {
    */
   static async sendMfaCodeEmail(toEmail, mfaCode) {
     const emailUser = (process.env.SMTP_USER || process.env.EMAIL_USER || "").trim();
-    const emailPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || "").trim();
+    const emailPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.RESEND_API_KEY || "").trim();
     const isReal = this.isRealConfigured();
     const fromAddress = process.env.EMAIL_FROM || (emailUser ? `"TrustVault Security" <${emailUser}>` : '"TrustVault Security" <security@trustvault.com>');
 
