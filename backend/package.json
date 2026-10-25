@@ -26,6 +26,7 @@
     "mongoose": "^9.11.2",
     "multer": "^2.4.0",
     "nodemailer": "^10.2.1",
+    "trustvault": "file:..",
     "yauzl": "^3.4.0"
   },
   "devDependencies": {

@@ -1,3 +1,5 @@
+const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 require("dotenv").config();
 
 const authenticate = require("./middleware/authenticate");
@@ -48,7 +50,6 @@ app.get("/api/health", (req, res) => {
 });
 
 // Serve frontend build if present (for seamless single-service production deployment)
-const path = require("path");
 const fs = require("fs");
 const frontendDist = path.resolve(__dirname, "..", "frontend", "dist");
 if (fs.existsSync(frontendDist)) {
@@ -63,8 +64,19 @@ if (fs.existsSync(frontendDist)) {
 
 // Connect to MongoDB and start the server
 async function startServer() {
+  const mongoUri =
+    process.env.MONGODB_URI ||
+    process.env.MONGO_URI ||
+    process.env.DATABASE_URL;
+
+  if (!mongoUri) {
+    console.error("❌ CRITICAL ERROR: MONGODB_URI environment variable is missing!");
+    console.error("👉 Please add MONGODB_URI in Render Dashboard -> Environment -> Add Environment Variable.");
+    process.exit(1);
+  }
+
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(mongoUri);
 
     console.log("Database name:", mongoose.connection.name);
     console.log("MongoDB connected successfully");
