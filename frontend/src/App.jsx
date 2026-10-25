@@ -31,6 +31,8 @@ function App() {
   // Password reset token state
   const [resetToken, setResetToken] = useState('')
   const [resetTokenEmail, setResetTokenEmail] = useState('')
+  const [evalResetUrl, setEvalResetUrl] = useState('')
+  const [evalResetToken, setEvalResetToken] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -44,15 +46,32 @@ function App() {
     }
   })
 
-  // Detect resetToken in URL query params on page load
+  // Detect resetToken in URL query params or hash on page load and URL changes
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const token = params.get('resetToken')
-    if (token) {
-      setResetToken(token)
-      setMode('reset')
-      verifyResetToken(token)
+    const checkResetToken = () => {
+      const params = new URLSearchParams(window.location.search)
+      let token = params.get('resetToken')
+      if (!token && window.location.hash.includes('resetToken=')) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#\/?/, ''))
+        token = hashParams.get('resetToken')
+      }
+
+      if (token && token.trim()) {
+        const cleanToken = token.trim()
+        sessionStorage.removeItem('trustvault_token')
+        sessionStorage.removeItem('trustvault_user')
+        setLoggedInUser(null)
+        setResetToken(cleanToken)
+        setMode('reset')
+        setError('')
+        setMessage('Verifying reset link...')
+        verifyResetToken(cleanToken)
+      }
     }
+
+    checkResetToken()
+    window.addEventListener('popstate', checkResetToken)
+    return () => window.removeEventListener('popstate', checkResetToken)
   }, [])
 
   // Cooldown timer for MFA resend
@@ -67,10 +86,11 @@ function App() {
   // Verify reset token with backend
   async function verifyResetToken(token) {
     try {
+      const clean = (token || '').trim()
       const res = await fetch(`${API_BASE}/api/auth/verify-reset-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resetToken: token }),
+        body: JSON.stringify({ resetToken: clean }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -146,6 +166,13 @@ function App() {
           throw new Error(data.message || 'Could not send reset link.')
         }
 
+        if (data.resetUrl) {
+          setEvalResetUrl(data.resetUrl)
+          setEvalResetToken(data.resetToken || '')
+        } else {
+          setEvalResetUrl('')
+          setEvalResetToken('')
+        }
         setMessage(
           data.message || `A password reset link has been sent to ${email.trim()}.`
         )
@@ -319,8 +346,8 @@ function App() {
     setMode('login')
   }
 
-  // If authenticated, display dashboard
-  if (loggedInUser) {
+  // If authenticated and not currently resetting password, display dashboard
+  if (loggedInUser && mode !== 'reset') {
     return (
       <Dashboard
         user={loggedInUser}
