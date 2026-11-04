@@ -19,6 +19,33 @@ app.use(helmet());
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "100kb" }));
 
+// On-demand database connection (essential for serverless environments like Vercel)
+if (process.env.VERCEL) {
+  let isConnecting = false;
+  app.use(async (req, res, next) => {
+    if (req.path === "/api/health") return next();
+    if (mongoose.connection.readyState === 1) return next();
+    const mongoUri =
+      process.env.MONGODB_URI ||
+      process.env.MONGO_URI ||
+      process.env.DATABASE_URL;
+
+    if (!mongoUri) return next();
+
+    try {
+      if (!isConnecting) {
+        isConnecting = true;
+        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 4000 });
+        isConnecting = false;
+      }
+    } catch (err) {
+      isConnecting = false;
+      console.error("Serverless MongoDB connection error:", err.message);
+    }
+    next();
+  });
+}
+
 // API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/documents", documentRoutes);

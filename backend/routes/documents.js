@@ -13,8 +13,13 @@ const AuditLog = require("../models/AuditLog");
 const router = express.Router();
 
 // Store confidential files outside publicly accessible folders.
-const uploadDir = path.resolve(__dirname, "..", "private_uploads");
-fs.mkdirSync(uploadDir, { recursive: true });
+const os = require("os");
+const uploadDir = process.env.VERCEL
+  ? path.join(os.tmpdir(), "private_uploads")
+  : path.resolve(__dirname, "..", "private_uploads");
+try {
+  fs.mkdirSync(uploadDir, { recursive: true });
+} catch (e) {}
 
 // Allowed extensions and MIME types.
 const allowedExtensions = [
