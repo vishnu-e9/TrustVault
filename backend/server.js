@@ -46,12 +46,14 @@ if (process.env.VERCEL) {
   });
 }
 
-// API routes
+// API routes (support both /api/ prefix and direct path for Vercel/Render compatibility)
 app.use("/api/auth", authRoutes);
+app.use("/auth", authRoutes);
 app.use("/api/documents", documentRoutes);
+app.use("/documents", documentRoutes);
 
 // Get logged-in user details
-app.get("/api/auth/me", authenticate, (req, res) => {
+app.get(["/api/auth/me", "/auth/me"], authenticate, (req, res) => {
   res.status(200).json({
     success: true,
     message: "Authentication successful",
@@ -65,7 +67,7 @@ app.get("/api/auth/me", authenticate, (req, res) => {
 });
 
 // Health check
-app.get("/api/health", (req, res) => {
+app.get(["/api/health", "/health"], (req, res) => {
   res.status(200).json({
     success: true,
     message: "TrustVault backend is running",
